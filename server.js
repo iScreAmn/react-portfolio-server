@@ -32,6 +32,15 @@ app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Лог ошибок и ответ 500
+app.use((err, req, res, next) => {
+  console.error('Unhandled error:', err);
+  res.status(500).json({
+    success: false,
+    message: 'Internal server error. Please try again later.'
+  });
+});
+
 // Vercel serverless — не запускаем listen
 if (!process.env.VERCEL) {
   app.listen(PORT, () => {
