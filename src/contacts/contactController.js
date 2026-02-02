@@ -24,7 +24,7 @@ export const handleContact = async (req, res) => {
       });
     }
 
-    const { name, contactMethod, message, captcha } = req.body;
+    const { name, contactMethod, contactValue, message, captcha } = req.body;
 
     if (captcha !== 'portfolio2024') {
       return res.status(400).json({
@@ -40,7 +40,7 @@ export const handleContact = async (req, res) => {
       });
     }
 
-    await sendContactEmail({ name, contactMethod, message });
+    await sendContactEmail({ name, contactMethod, contactValue, message });
 
     res.status(200).json({
       success: true,

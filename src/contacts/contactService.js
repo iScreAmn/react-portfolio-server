@@ -12,15 +12,18 @@ export const createTransporter = () => {
   });
 };
 
-export const sendContactEmail = async ({ name, contactMethod, message }) => {
+export const sendContactEmail = async ({ name, contactMethod, contactValue, message }) => {
   const transporter = createTransporter();
   await transporter.verify();
+
+  const contactLabel = contactMethod === 'Email' ? 'Email' : 'Phone';
 
   const emailContent = `
     New Contact Form Submission
     
     Name: ${name}
     Preferred contact: ${contactMethod}
+    ${contactLabel}: ${contactValue}
     
     Message:
     ${message}
@@ -37,6 +40,7 @@ export const sendContactEmail = async ({ name, contactMethod, message }) => {
       <h2>New Contact Form Submission</h2>
       <p><strong>Name:</strong> ${name}</p>
       <p><strong>Preferred contact:</strong> ${contactMethod}</p>
+      <p><strong>${contactLabel}:</strong> ${contactValue}</p>
       <p><strong>Message:</strong></p>
       <p>${message.replace(/\n/g, '<br>')}</p>
       <p><em>Submitted at: ${new Date().toLocaleString()}</em></p>
