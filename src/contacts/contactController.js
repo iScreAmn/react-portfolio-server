@@ -1,6 +1,7 @@
 import { validationResult } from 'express-validator';
 import { sendContactEmail } from './contactService.js';
 import { isSpamMessage } from './spamGuard.js';
+import { sendContactTelegramNotification } from '../telegram/services/notifications.js';
 
 export const handleContact = async (req, res) => {
   try {
@@ -40,7 +41,48 @@ export const handleContact = async (req, res) => {
       });
     }
 
-    await sendContactEmail({ name, contactMethod, contactValue, message });
+    const contactData = {
+      name: name.trim(),
+      contactMethod,
+      contactValue: (contactValue ?? '').trim(),
+      message: (message ?? '').trim(),
+      submitted_at: new Date().toLocaleString('en-GB', {
+        timeZone: 'UTC',
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      })
+    };
+
+    const [emailResult, telegramResult] = await Promise.allSettled([
+      sendContactEmail(contactData),
+      sendContactTelegramNotification(contactData)
+    ]);
+
+    if (telegramResult.status === 'fulfilled') {
+      console.log('Contact telegram notification result:', telegramResult.value);
+    } else {
+      console.error(
+        'Contact telegram notification failed:',
+        telegramResult.reason?.message || telegramResult.reason,
+        telegramResult.reason?.details || ''
+      );
+    }
+
+    if (emailResult.status === 'rejected') {
+      console.error('Contact email failed:', emailResult.reason?.message || emailResult.reason);
+    }
+
+    const deliveryOk = emailResult.status === 'fulfilled' || telegramResult.status === 'fulfilled';
+    if (!deliveryOk) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to send message. Please try again later.'
+      });
+    }
 
     res.status(200).json({
       success: true,
