@@ -1,7 +1,7 @@
 import { validationResult } from 'express-validator';
-import { sendContactEmail } from './contactService.js';
-import { isSpamMessage } from './spamGuard.js';
-import { sendContactTelegramNotification } from '../telegram/services/notifications.js';
+import { sendContactEmail } from '../services/contactService.js';
+import { isSpamMessage } from '../middlewares/spamGuard.js';
+import { sendContactTelegramNotification } from '../../telegram/services/notifications.js';
 
 export const handleContact = async (req, res) => {
   try {

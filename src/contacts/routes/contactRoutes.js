@@ -1,7 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { contactValidationRules } from './contactValidator.js';
-import { handleContact } from './contactController.js';
+import { contactValidationRules } from '../validators/contactValidator.js';
+import { handleContact } from '../controllers/contactController.js';
 
 const router = express.Router();
 
