@@ -42,6 +42,7 @@ export const trackEvents = async (req, res) => {
     res.status(201).json({
       success: true,
       count: result.count,
+      disabled: process.env.ANALYTICS_DISABLED === '1',
       message: `${result.count} event(s) tracked successfully`,
     });
   } catch (error) {

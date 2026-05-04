@@ -5,10 +5,14 @@ const RANGE_MAP = {
   '30d': 30 * 24 * 60 * 60 * 1000,
   '90d': 90 * 24 * 60 * 60 * 1000,
 };
+const analyticsDisabled = process.env.ANALYTICS_DISABLED === '1';
 
 export const trackEvents = async (events) => {
   if (!Array.isArray(events) || events.length === 0) {
     throw new Error('Events must be a non-empty array');
+  }
+  if (analyticsDisabled) {
+    return { success: true, count: 0 };
   }
 
   const count = await analyticsRepo.insertEvents(events);
@@ -16,6 +20,17 @@ export const trackEvents = async (events) => {
 };
 
 export const getStats = async (range = '7d') => {
+  if (analyticsDisabled) {
+    return {
+      totalEvents: 0,
+      pageViews: 0,
+      uniqueUsers: 0,
+      avgSessionDuration: '0m',
+      topPages: [],
+      topActions: [],
+      hourlyActivity: [],
+    };
+  }
   const rangeMs = RANGE_MAP[range] || RANGE_MAP['7d'];
   const startDate = new Date(Date.now() - rangeMs);
 
@@ -83,6 +98,7 @@ const formatHourlyActivity = (rawActivity) => {
 };
 
 export const getSessions = async (range = '7d', limit = 50) => {
+  if (analyticsDisabled) return [];
   const rangeMs = RANGE_MAP[range] || RANGE_MAP['7d'];
   const startDate = new Date(Date.now() - rangeMs);
 
@@ -95,6 +111,7 @@ export const getSessions = async (range = '7d', limit = 50) => {
 };
 
 export const getSessionDetail = async (sessionId) => {
+  if (analyticsDisabled) return null;
   const [summary, events] = await Promise.all([
     analyticsRepo.getSessionSummary(sessionId),
     analyticsRepo.getSessionEvents(sessionId),
@@ -131,6 +148,7 @@ const formatDuration = (durationMs) => {
 };
 
 export const deleteAllAnalytics = async () => {
+  if (analyticsDisabled) return { success: true, deletedCount: 0 };
   const count = await analyticsRepo.deleteAllEvents();
   return { success: true, deletedCount: count };
 };
@@ -138,6 +156,9 @@ export const deleteAllAnalytics = async () => {
 export const deleteAnalyticsByPeriod = async (days) => {
   if (!days || days < 1) {
     throw new Error('Invalid days parameter');
+  }
+  if (analyticsDisabled) {
+    return { success: true, deletedCount: 0, olderThan: days };
   }
 
   const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
@@ -149,6 +170,9 @@ export const deleteSession = async (sessionId) => {
   if (!sessionId) {
     throw new Error('sessionId is required');
   }
+  if (analyticsDisabled) {
+    return { success: true, deletedCount: 0 };
+  }
 
   const count = await analyticsRepo.deleteSessionEvents(sessionId);
   if (count === 0) {
@@ -158,6 +182,13 @@ export const deleteSession = async (sessionId) => {
 };
 
 export const getAnalyticsInfo = async () => {
+  if (analyticsDisabled) {
+    return {
+      totalEvents: 0,
+      estimatedSize: '~0KB',
+      disabled: true,
+    };
+  }
   const totalEvents = await analyticsRepo.getTotalEventsCount();
   return {
     totalEvents,
