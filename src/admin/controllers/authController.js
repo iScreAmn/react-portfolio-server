@@ -1,10 +1,7 @@
 import crypto from 'crypto';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const getLegacyTokenPassword = () => String(process.env.ADMIN_ANALYTICS_TOKEN || '');
-const getPlainPassword = () => String(process.env.ADMIN_PASSWORD || getLegacyTokenPassword() || '');
-const getPasswordHash = () => String(process.env.ADMIN_PASSWORD_HASH || '').trim();
+const getPlainPassword = () => String(process.env.ADMIN_PASSWORD || '');
 
 const safeEqualString = (a, b) => {
   const bufA = Buffer.from(a, 'utf8');
@@ -14,10 +11,6 @@ const safeEqualString = (a, b) => {
 };
 
 const verifyPassword = async (candidate) => {
-  const hash = getPasswordHash();
-  if (hash) {
-    return bcrypt.compare(candidate, hash);
-  }
   const plain = getPlainPassword();
   if (!plain) return false;
   return safeEqualString(candidate, plain);
@@ -30,13 +23,12 @@ export const login = async (req, res) => {
 
     const adminLogin = String(process.env.ADMIN_LOGIN || '').trim();
     const jwtSecret = String(process.env.JWT_SECRET || '').trim();
-    const hasHash = Boolean(getPasswordHash());
     const hasPlain = getPlainPassword().length > 0;
 
-    if (!adminLogin || !jwtSecret || (!hasHash && !hasPlain)) {
+    if (!adminLogin || !jwtSecret || !hasPlain) {
       return res.status(500).json({
         success: false,
-        message: 'Admin login is not configured (ADMIN_LOGIN, JWT_SECRET, ADMIN_PASSWORD_HASH or ADMIN_PASSWORD). Legacy ADMIN_ANALYTICS_TOKEN is also supported.',
+        message: 'Admin login is not configured (ADMIN_LOGIN, ADMIN_PASSWORD, JWT_SECRET).',
       });
     }
 
