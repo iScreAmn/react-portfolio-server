@@ -1,6 +1,7 @@
 import express from 'express';
 import rateLimit from 'express-rate-limit';
-import { login } from '../controllers/authController.js';
+import { login, changePassword } from '../controllers/authController.js';
+import { requireAdminJwt } from '../middleware/adminJwtAuth.js';
 
 const router = express.Router();
 
@@ -12,5 +13,6 @@ const loginLimiter = rateLimit({
 });
 
 router.post('/login', loginLimiter, login);
+router.post('/change-password', requireAdminJwt, changePassword);
 
 export default router;

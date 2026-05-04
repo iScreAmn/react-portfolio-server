@@ -1,5 +1,6 @@
 import { MongoClient } from 'mongodb';
 import { ensureIndexes as ensureAnalyticsIndexes } from '../analytics/repositories/analyticsRepository.js';
+import { seedInitialAdminUser } from '../admin/services/adminBootstrap.js';
 
 const getMongoUri = () => String(process.env.MONGODB_URI || '').trim();
 
@@ -34,6 +35,7 @@ export const connectDB = async () => {
     const dbName = resolveDbName(mongoUri);
     db = client.db(dbName);
     await ensureAnalyticsIndexes();
+    await seedInitialAdminUser(db);
     return db;
   })();
 

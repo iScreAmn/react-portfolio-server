@@ -1,4 +1,5 @@
 import jwt from 'jsonwebtoken';
+import { userRepository } from '../repositories/userRepository.js';
 
 const readBearerToken = (req) => {
   const bearer = req.get('authorization');
@@ -6,35 +7,34 @@ const readBearerToken = (req) => {
   return bearer.slice('Bearer '.length).trim();
 };
 
-export const requireAdminJwt = (req, res, next) => {
+export const requireAdminJwt = async (req, res, next) => {
   const secret = String(process.env.JWT_SECRET || '').trim();
   if (!secret) {
-    return res.status(500).json({
-      success: false,
-      message: 'JWT_SECRET is not configured on server.',
-    });
+    return res.status(500).json({ success: false, message: 'JWT_SECRET is not configured on server.' });
   }
+
   const token = readBearerToken(req);
   if (!token) {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized',
-    });
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
+
   try {
     const payload = jwt.verify(token, secret);
-    if (payload?.sub !== 'admin' || !payload?.login) {
-      return res.status(401).json({
-        success: false,
-        message: 'Unauthorized',
-      });
+
+    let user = null;
+    if (payload?.sub) user = await userRepository.findById(payload.sub);
+    if (!user && payload?.login) user = await userRepository.findByLogin(payload.login);
+    if (!user) return res.status(401).json({ success: false, message: 'Unauthorized' });
+
+    const tokenPwdAt = String(payload?.pwdAt || '').trim();
+    const dbPwdAt = String(user.passwordUpdatedAt || user.updatedAt || '').trim();
+    if (!tokenPwdAt || (dbPwdAt && tokenPwdAt !== dbPwdAt)) {
+      return res.status(401).json({ success: false, message: 'Unauthorized' });
     }
-    req.admin = payload;
+
+    req.admin = { ...payload, sub: user.id, login: user.login, role: user.role };
     return next();
   } catch {
-    return res.status(401).json({
-      success: false,
-      message: 'Unauthorized',
-    });
+    return res.status(401).json({ success: false, message: 'Unauthorized' });
   }
 };
