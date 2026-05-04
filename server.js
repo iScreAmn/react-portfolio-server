@@ -9,7 +9,8 @@ import authRoutes from './src/admin/routes/authRoutes.js';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+// 5000 can be occupied by macOS AirTunes on some machines.
+const PORT = Number(process.env.PORT || 5050);
 
 const extraOrigins = process.env.CORS_ORIGIN
   ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim()).filter(Boolean)
