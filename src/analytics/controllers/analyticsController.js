@@ -12,6 +12,35 @@ const getAllowedAnalyticsHosts = () => {
 
 const getHeaderString = (req, headerName) => String(req.headers[headerName] || '').trim();
 
+const extractHost = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '';
+  try {
+    return new URL(raw).hostname.toLowerCase();
+  } catch {
+    return raw.split(':')[0].toLowerCase();
+  }
+};
+
+const resolveEventHost = (req, event) => {
+  const directHost = extractHost(event?.hostname);
+  if (directHost) return directHost;
+
+  const eventOriginHost = extractHost(event?.origin);
+  if (eventOriginHost) return eventOriginHost;
+
+  const requestOriginHost = extractHost(getHeaderString(req, 'origin'));
+  if (requestOriginHost) return requestOriginHost;
+
+  const requestRefererHost = extractHost(getHeaderString(req, 'referer'));
+  if (requestRefererHost) return requestRefererHost;
+
+  const forwardedHost = extractHost(getHeaderString(req, 'x-forwarded-host'));
+  if (forwardedHost) return forwardedHost;
+
+  return extractHost(getHeaderString(req, 'host'));
+};
+
 const getClientIp = (req) => {
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
@@ -53,7 +82,7 @@ export const trackEvents = async (req, res) => {
       const page = String(event?.data?.page || event?.url || '').split('?')[0];
       if (page.startsWith('/admin')) return false;
 
-      const host = String(event?.hostname || '').trim().toLowerCase();
+      const host = resolveEventHost(req, event);
       if (!host) return false;
       return allowedHosts.has(host);
     });
