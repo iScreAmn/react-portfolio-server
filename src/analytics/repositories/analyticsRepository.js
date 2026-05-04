@@ -49,6 +49,7 @@ export const aggregateTopPages = async (startDate, limit = 10) => {
         $match: {
           type: 'page_view',
           timestamp: { $gte: startDate },
+          'data.page': { $not: /^\/admin(?:\/|$)/ },
         },
       },
       {
@@ -173,6 +174,7 @@ export const ensureIndexes = async () => {
   await collection.createIndex({ sessionId: 1, timestamp: 1 });
   await collection.createIndex({ userId: 1 }, { sparse: true });
   await collection.createIndex({ ip: 1 }, { sparse: true });
+  await collection.createIndex({ 'geo.country': 1, 'geo.city': 1 }, { sparse: true });
 
   console.log('[ANALYTICS] Indexes ensured');
 };
@@ -211,6 +213,9 @@ export const aggregateSessions = async (startDate, limit = 50) => {
           eventsCount: 1,
           pagesCount: { $size: '$pages' },
           ip: '$firstEvent.ip',
+          geo: '$firstEvent.geo',
+          country: '$firstEvent.geo.country',
+          city: '$firstEvent.geo.city',
           referrer: '$firstEvent.referrer',
           device: '$firstEvent.device',
           locale: '$firstEvent.locale',
@@ -266,6 +271,9 @@ export const getSessionSummary = async (sessionId) => {
           pages: 1,
           eventTypes: 1,
           ip: '$firstEvent.ip',
+          geo: '$firstEvent.geo',
+          country: '$firstEvent.geo.country',
+          city: '$firstEvent.geo.city',
           referrer: '$firstEvent.referrer',
           device: '$firstEvent.device',
           locale: '$firstEvent.locale',

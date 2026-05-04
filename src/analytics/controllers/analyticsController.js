@@ -1,5 +1,17 @@
 import * as analyticsService from '../services/analyticsService.js';
 
+const DEFAULT_ALLOWED_ANALYTICS_HOSTS = ['dj-myportfolio.vercel.app', 'www.dj-myportfolio.vercel.app'];
+
+const getAllowedAnalyticsHosts = () => {
+  const envHosts = String(process.env.ANALYTICS_ALLOWED_HOSTS || '').trim();
+  const hosts = envHosts
+    ? envHosts.split(',').map((h) => h.trim().toLowerCase()).filter(Boolean)
+    : DEFAULT_ALLOWED_ANALYTICS_HOSTS;
+  return new Set(hosts);
+};
+
+const getHeaderString = (req, headerName) => String(req.headers[headerName] || '').trim();
+
 const getClientIp = (req) => {
   const forwarded = req.headers['x-forwarded-for'];
   if (forwarded) {
@@ -30,11 +42,36 @@ export const trackEvents = async (req, res) => {
     }
 
     const clientIp = getClientIp(req);
+    const geo = {
+      country: getHeaderString(req, 'x-vercel-ip-country'),
+      region: getHeaderString(req, 'x-vercel-ip-country-region'),
+      city: getHeaderString(req, 'x-vercel-ip-city'),
+    };
+    const allowedHosts = getAllowedAnalyticsHosts();
 
-    const eventsWithMetadata = events.map((event) => ({
+    const filteredEvents = events.filter((event) => {
+      const page = String(event?.data?.page || event?.url || '').split('?')[0];
+      if (page.startsWith('/admin')) return false;
+
+      const host = String(event?.hostname || '').trim().toLowerCase();
+      if (!host) return false;
+      return allowedHosts.has(host);
+    });
+
+    if (filteredEvents.length === 0) {
+      return res.status(202).json({
+        success: true,
+        count: 0,
+        dropped: events.length,
+        message: 'No eligible analytics events to track',
+      });
+    }
+
+    const eventsWithMetadata = filteredEvents.map((event) => ({
       ...event,
       flushedAt,
       ip: clientIp,
+      geo,
     }));
 
     const result = await analyticsService.trackEvents(eventsWithMetadata);
