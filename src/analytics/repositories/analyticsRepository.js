@@ -217,6 +217,14 @@ export const aggregateSessions = async (startDate, limit = 50) => {
           country: '$firstEvent.geo.country',
           city: '$firstEvent.geo.city',
           referrer: '$firstEvent.referrer',
+          trafficSource: '$firstEvent.trafficSource',
+          sourceType: {
+            $ifNull: [
+              '$firstEvent.trafficSource.sourceType',
+              { $cond: [{ $ifNull: ['$firstEvent.referrer', false] }, 'referral', 'direct'] },
+            ],
+          },
+          sourceHost: '$firstEvent.trafficSource.sourceHost',
           device: '$firstEvent.device',
           locale: '$firstEvent.locale',
           timezone: '$firstEvent.timezone',
@@ -275,6 +283,14 @@ export const getSessionSummary = async (sessionId) => {
           country: '$firstEvent.geo.country',
           city: '$firstEvent.geo.city',
           referrer: '$firstEvent.referrer',
+          trafficSource: '$firstEvent.trafficSource',
+          sourceType: {
+            $ifNull: [
+              '$firstEvent.trafficSource.sourceType',
+              { $cond: [{ $ifNull: ['$firstEvent.referrer', false] }, 'referral', 'direct'] },
+            ],
+          },
+          sourceHost: '$firstEvent.trafficSource.sourceHost',
           device: '$firstEvent.device',
           locale: '$firstEvent.locale',
           timezone: '$firstEvent.timezone',
