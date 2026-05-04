@@ -1,4 +1,4 @@
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 const normalizeLogin = (value) => String(value || '').trim().toLowerCase();
 
