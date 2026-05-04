@@ -2,7 +2,8 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 
-const getPlainPassword = () => String(process.env.ADMIN_PASSWORD || '');
+const getLegacyTokenPassword = () => String(process.env.ADMIN_ANALYTICS_TOKEN || '');
+const getPlainPassword = () => String(process.env.ADMIN_PASSWORD || getLegacyTokenPassword() || '');
 const getPasswordHash = () => String(process.env.ADMIN_PASSWORD_HASH || '').trim();
 
 const safeEqualString = (a, b) => {
@@ -35,7 +36,7 @@ export const login = async (req, res) => {
     if (!adminLogin || !jwtSecret || (!hasHash && !hasPlain)) {
       return res.status(500).json({
         success: false,
-        message: 'Admin login is not configured (ADMIN_LOGIN, JWT_SECRET, ADMIN_PASSWORD_HASH or ADMIN_PASSWORD).',
+        message: 'Admin login is not configured (ADMIN_LOGIN, JWT_SECRET, ADMIN_PASSWORD_HASH or ADMIN_PASSWORD). Legacy ADMIN_ANALYTICS_TOKEN is also supported.',
       });
     }
 
