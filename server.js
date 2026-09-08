@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import contactRoutes from './src/contacts/routes/contactRoutes.js';
 import analyticsRoutes from './src/analytics/routes/analyticsRoutes.js';
 import authRoutes from './src/admin/routes/authRoutes.js';
+import calculatorRoutes from './src/calculator/routes/calculatorRoutes.js';
 
 dotenv.config();
 
@@ -87,6 +88,7 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 app.use('/api/contact', contactRoutes);
 app.use('/api/admin', authRoutes);
 app.use('/api/analytics', analyticsRoutes);
+app.use('/api/calculator', calculatorRoutes);
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
